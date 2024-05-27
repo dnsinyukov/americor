@@ -2,7 +2,7 @@
 
 ### Setup Backend
 ```
-cd app && make build
+make build
 ``` 
 
 OR
