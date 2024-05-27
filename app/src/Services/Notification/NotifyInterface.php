@@ -2,7 +2,7 @@
 
 namespace App\Services\Notification;
 
-interface Sendable
+interface NotifyInterface
 {
-
+    public function notify(string $title, string $message): bool;
 }

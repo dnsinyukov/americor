@@ -9,29 +9,20 @@ services:
       restart: unless-stopped
       tty: true
       volumes:
-          - ./:/var/www/backend
-          - ./.docker/php/ini/custom.ini:/usr/local/etc/php/conf.d/custom.ini
-          - ./.docker/php/supervisord.conf:/etc/supervisor/supervisord.conf
-      command: [ "/home/www/entry.sh" ]
+          - ./:/var/www
       networks:
           - app-network
-
   nginx:
       container_name: nginx
       image: nginx:alpine
       ports:
           - "80:80"
-          - "443:443"
           - "8080:8080"
       volumes:
           - ./.docker/nginx/nginx.conf:/etc/nginx/nginx.conf
-          - ./.docker/nginx/${APP_ENV}:/etc/nginx/conf.d/
+          - ./.docker/nginx/conf/local:/etc/nginx/conf.d/
           - ./.docker/nginx/logs:/var/log/nginx
-          - ./.docker/nginx/snippets:/etc/nginx/snippets
-          - ./.docker/nginx/mime.types:/etc/nginx/mime.types
-          - ./.docker/nginx/ssl:/etc/nginx/ssl
-          - ./:/var/www/backend
-          - ../apic-front:/var/www/front
+          - ./:/var/www
       restart: unless-stopped
       depends_on:
           - app
@@ -42,7 +33,7 @@ services:
       container_name: db
       image: mysql:8.0.32
       volumes:
-          - ./.docker/db/data:/var/lib/mysql:delegated
+          - db:/var/lib/mysql
       command:
         --max_allowed_packet=250M
         --character-set-server=utf8mb4
@@ -57,29 +48,23 @@ services:
       restart: unless-stopped
       networks:
           - app-network
-
-  elasticsearch:
-      container_name: elasticsearch
-      image: docker.elastic.co/elasticsearch/elasticsearch:8.6.2
+  adminer:
+      container_name: adminer
+      image: adminer:latest
       ports:
-          - "9200:9200"
-          - "9300:9300"
+          - "8082:8080"
+      links:
+          - database:db
       environment:
-          - "ES_JAVA_OPTS=-Xms256M -Xmx256M"
-          #- "ES_JAVA_OPTS=-Des.enforce.bootstrap.checks=true"
-      volumes:
-          - ./.docker/elasticsearch/logs:/var/log/elasticsearch
-          - ./.docker/elasticsearch/data:/usr/share/elasticsearch/data:rw
-          - ./.docker/elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+          ADMINER_DEFAULT_SERVER: mysql
+          ADMINER_PLUGINS: 'tables-filter sql-log'
+      restart: unless-stopped
       networks:
           - app-network
-      deploy:
-          resources:
-              limits:
-                  cpus: '0.2'
-                  memory: 700M
-      restart: unless-stopped
 
 networks:
     app-network:
         driver: bridge
+volumes:
+    db:
+        driver: local

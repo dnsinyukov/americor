@@ -2,22 +2,35 @@
 
 namespace App\Services\Conditions;
 
-use App\Entity\Client;
 use App\Services\LoanConditionInterface;
+use Random\RandomException;
 
 class State implements LoanConditionInterface
 {
-    /**
-     * @param Client $client
-     * @return bool
-     */
-    public function __invoke(Client $client): bool
+    protected string $address;
+
+    public function __construct(string $address = '')
     {
-        return $client->getAge() >= 18 && $client->getFico() <= 60;
+        $this->address = $address;
+    }
+
+    /**
+     * @return bool
+     * @throws RandomException
+     */
+    public function __invoke(): bool
+    {
+        preg_match('~(CA|NY|NV)~', $this->address, $match);
+
+        if (count($match) === 0) {
+            return false;
+        }
+
+        return !($match[1] === 'NY') || 1 === random_int(0, 1);
     }
 
     public function getName(): string
     {
-        return 'credit-score';
+        return 'state';
     }
 }
